@@ -1,121 +1,89 @@
-import axios, { AxiosResponse, AxiosRequestConfig } from 'axios'
-import { MAINHOST, ISMOCK, conmomPrams } from '@/config'
-import requestConfig from '@/config/requestConfig'
-import { getToken } from '@/utils/common'
-import router from '@/router'
+// 默认利用axios的cancelToken进行防重复提交。
+// 如需允许多个提交同时发出。则需要在请求配置config中增加 neverCancel 属性，并设置为true
 
-declare type Methods = "GET" | "OPTIONS" | "HEAD" | "POST" | "PUT" | "DELETE" | "TRACE" | "CONNECT"
-declare interface Datas {
-    method?: Methods
-    [key: string]: any
-}
-const baseURL = process.env.NODE_ENV === 'production' ? MAINHOST : location.origin
-const token = getToken()
+import axios from 'axios';
+import { URL } from "@/api/constant";
+// import store from '../store/index';
+// import { getSessionId } from '@/utils/auth';
 
-class HttpRequest {
-    public queue: any // 请求的url集合
-    public constructor() {
-        this.queue = {}
-    }
-    destroy(url: string) {
-        delete this.queue[url]
-        if (!Object.keys(this.queue).length) {
-            // hide loading
+/* 防止重复提交，利用axios的cancelToken */
+let pending: any[] = []; // 声明一个数组用于存储每个ajax请求的取消函数和ajax标识
+const CancelToken: any = axios.CancelToken;
+
+
+
+const removePending: any = (config: any, f: any) => {
+    // 获取请求的url
+    const flagUrl = config.url;
+    // 判断该请求是否在请求队列中
+    if (pending.indexOf(flagUrl) !== -1) {
+        // 如果在请求中，并存在f,f即axios提供的取消函数
+        if (f) {
+            f('取消重复请求'); // 执行取消操作
+        } else {
+            pending.splice(pending.indexOf(flagUrl), 1); // 把这条记录从数组中移除
+        }
+    } else {
+        // 如果不存在在请求队列中，加入队列
+        if (f) {
+            pending.push(flagUrl);
         }
     }
-    interceptors(instance: any, url?: string) {
-        // 请求拦截
-        instance.interceptors.request.use((config: AxiosRequestConfig) => {
-            // 添加全局的loading...
-            if (!Object.keys(this.queue).length) {
-                // show loading
-            }
-            if (url) {
-                this.queue[url] = true
-            }
-            return config
-        }, (error: any) => {
-            console.error(error)
-        })
-        // 响应拦截
-        instance.interceptors.response.use((res: AxiosResponse) => {
-            if (url) {
-                this.destroy(url)
-            }
-            const { data, status } = res
-            if (status === 200 && ISMOCK) { return data } // 如果是mock数据，直接返回
-            if (status === 200 && data && data.code === 0) { return data } // 请求成功
-            return requestFail(res) // 失败回调
-        }, (error: any) => {
-            if (url) {
-                this.destroy(url)
-            }
-            console.error(error)
-        })
-    }
-    async request(options: AxiosRequestConfig) {
-        const instance = axios.create()
-        await this.interceptors(instance, options.url)
-        return instance(options)
-    }
-}
+};
 
-// 请求失败
-const requestFail = (res: AxiosResponse) => {
-    let errStr = '网络繁忙！'
-    // token失效重新登陆
-    if (res.data.code === 1000001) {
-        return router.replace({ name: 'login' })
-    }
+/* 创建axios实例 */
+const service = axios.create({
+    baseURL: URL.baseURL,
+    timeout: 5000, // 请求超时时间
+});
 
-    return {
-        err: console.error({
-            code: res.data.errcode || res.data.code,
-            msg: res.data.errmsg || errStr
-        })
+/* request拦截器 */
+service.interceptors.request.use((config: any) => {
+    // neverCancel 配置项，允许多个请求
+    if (!config.neverCancel) {
+        // 生成cancelToken
+        config.cancelToken = new CancelToken((c: any) => {
+            removePending(config, c);
+        });
     }
-}
+    // 在这里可以统一修改请求头，例如 加入 用户 token 等操作
+    //   if (store.getters.sessionId) {
+    //     config.headers['X-SessionId'] = getSessionId(); // 让每个请求携带token--['X-Token']为自定义key
+    //   }
+    return config;
+}, (error: any) => {
+    Promise.reject(error);
+});
 
-// 合并axios参数
-const conbineOptions = (_opts: any, data: Datas, method: Methods): AxiosRequestConfig => {
-    let opts = _opts
-    if (typeof opts === 'string') {
-        opts = { url: opts }
-    }
-    const _data = { ...conmomPrams, ...opts.data, ...data }
-    const options = {
-        method: opts.method || data.method || method || 'GET',
-        url: opts.url,
-        header: { 'user-token': token },
-        baseURL
-    }
-    return options.method !== 'GET' ? Object.assign(options, { data: _data }) : Object.assign(options, { params: _data })
-}
-
-const HTTP = new HttpRequest()
-
-/**
- * 抛出整个项目的api方法
- */
-const Api = (() => {
-    const apiObj: any = {}
-    const requestList: any = requestConfig
-    const fun = (opts: AxiosRequestConfig | string) => {
-        return async (data = {}, method: Methods = "GET") => {
-            if (!token) {
-                console.error('No Token')
-                return router.replace({ name: 'login' })
+/* respone拦截器 */
+service.interceptors.response.use(
+    (response: any) => {
+        // 移除队列中的该请求，注意这时候没有传第二个参数f
+        removePending(response.config);
+        // 获取返回数据，并处理。按自己业务需求修改。下面只是个demo
+        const res = response.data;
+        if (res.code !== 200) {
+            if (res.code === 401) {
+                if (location.hash === '#/') {
+                    return res;
+                } else {
+                    location.href = '/#/';
+                }
             }
-            const newOpts = conbineOptions(opts, data, method)
-            const res = await HTTP.request(newOpts)
-            return res
+            return Promise.reject('error');
+        } else {
+            return response;
         }
-    }
-    Object.keys(requestConfig).forEach((key) => {
-        apiObj[key] = fun(requestList[key])
-    })
+    },
+    (error: any) => {
+        // 异常处理
+        console.log(error)
+        pending = [];
+        if (error.message === '取消重复请求') {
+            return Promise.reject(error);
+        }
+        return Promise.reject(error);
+    },
+);
 
-    return apiObj
-})()
-
-export default Api as any
+export default service;

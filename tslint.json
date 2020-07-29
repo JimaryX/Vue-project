@@ -10,7 +10,16 @@
     },
     "jsRules": {},
     "rules": {
-        "no-inferrable-types": false,
+        "prefer-const": ["error", {
+            "destructuring": "any",
+            "ignoreReadBeforeAssign": false
+        }],
+        "no-explicit-any": false,
+        "no-inferrable-types": [
+            false,
+            "ignore-params",
+            "ignore-properties"
+        ],
         "max-line-length": false,
         "comment-format": false,
         "quotemark": false, // 字符串文字需要单引号或双引号。
