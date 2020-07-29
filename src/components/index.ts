@@ -1,1 +1,1 @@
-import "./svgicons"
+import "./SvgIcon";

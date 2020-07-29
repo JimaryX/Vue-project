@@ -6,7 +6,7 @@
 //   directory：说明需要检索的目录
 //   useSubdirectories：是否检索子目录
 //   regExp: 匹配文件的正则表达式
-import Vue from 'vue'
+import Vue from 'vue';
 import SvgIcon from './svgIcon.vue'// svg组件
 
 // register globally
