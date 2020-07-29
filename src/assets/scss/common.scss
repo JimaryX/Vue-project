@@ -1,0 +1,66 @@
+
+html {
+  box-sizing: border-box;
+  // font-size: 16px;
+  .el-drawer {
+    // background-color: $color-primary;
+    overflow-y: auto;
+  }
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  font-family: CenturyGothic, sans-serif;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+iframe {
+  border: none;
+}
+
+div:focus {
+  outline: none;
+}
+
+a,
+a:focus,
+a:hover {
+  cursor: pointer;
+  color: inherit;
+  outline: none;
+  text-decoration: none;
+}
+
+a:focus,
+a:active {
+  outline: none;
+}
+
+a,
+a:focus,
+a:hover {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+
+.svg-icon {
+  width: 25px;
+  height: 25px;
+  fill: currentColor;
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.echarts {
+  width: 100%;
+  height: 100%;
+}

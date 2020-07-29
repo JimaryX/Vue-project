@@ -2,6 +2,7 @@
   <div class="login-wrap">
     {{data.pageName}}
     <button @click="click">点击发送</button>
+    <svg-icon icon-class="error"></svg-icon>
   </div>
 </template>
 <script lang="ts">

@@ -19,6 +19,17 @@ module.exports = {
         config.resolve.alias
             .set('@', resolve('src'))
             .set('_c', resolve('src/components'))
+        // 使用 webpack 的 exclude 和 include
+        // 让 svg-sprite-loader 只处理你指定文件夹下面的 svg，
+        // file-loaer 只处理除此文件夹之外的所有 svg
+        const svgRule = config.module.rule("svg");
+        svgRule.uses.clear();
+        svgRule
+            .use("svg-sprite-loader")
+            .loader("svg-sprite-loader")
+            .options({
+                symbolId: "icon-[name]"
+            });
     },
     css: {
         modules: false, // 启用 CSS modules
