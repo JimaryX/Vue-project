@@ -1,1 +1,2 @@
 import "./SvgIcon";
+import "./Echart";
