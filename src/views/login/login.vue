@@ -3,6 +3,7 @@
     {{data.pageName}}
     <button @click="click">点击发送</button>
     <svg-icon icon-class="error"></svg-icon>
+    <ElementTest></ElementTest>
   </div>
 </template>
 <script lang="ts">
@@ -10,6 +11,7 @@
   import { postSomeThings } from "@/api/main.ts";
   @Component({
     components: {
+      ElementTest: () => import("../demo/Elementui.vue")
     }
   })
   export default class Login extends Vue {

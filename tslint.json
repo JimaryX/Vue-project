@@ -1,11 +1,12 @@
 {
-    "defaultSeverity": "warning",
+    "defaultSeverity": "warn",
     "extends": [
         "tslint:recommended"
     ],
     "linterOptions": {
         "exclude": [
-            "node_modules/**"
+            "node_modules/**",
+            "**"
         ]
     },
     "jsRules": {},
@@ -16,9 +17,7 @@
         }],
         "no-explicit-any": false,
         "no-inferrable-types": [
-            false,
-            "ignore-params",
-            "ignore-properties"
+            false
         ],
         "max-line-length": false,
         "comment-format": false,
